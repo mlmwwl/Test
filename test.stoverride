@@ -1,0 +1,41 @@
+name: Apple Maps International Redirect
+desc: 将 Apple Maps 国内版域名重定向至国际版，并修改 Geo Manifest 地区参数。
+author: Gemini
+system: ios
+
+# 1. 解析主机名 (MITM)
+# 必须包含这些主机名才能解密 HTTPS 请求并执行重定向或修改
+mitm:
+  - gspe19-cn-ssl.ls.apple.com
+  - gspe12-cn-ssl.ls.apple.com
+  - direction2.is.autonavi.com
+  - gspe11-2-cn-ssl.ls.apple.com
+  - gspe35-ssl.ls.apple.com
+
+# 2. URL 重写 (Rewrite)
+rewrite:
+  # [span_2](start_span)瓦片地图重定向[span_2](end_span)
+  ^https?:\/\/gspe19-cn-ssl\.ls\.apple\.com\/tiles:
+    url: https://gspe19-ssl.ls.apple.com/tile.vf
+    type: 302
+
+  # [span_3](start_span)交通流量数据重定向[span_3](end_span)
+  ^https?:\/\/gspe12-cn-ssl\.ls\.apple\.com\/traffic:
+    url: https://gspe12-ssl.ls.apple.com/traffic
+    type: 302
+
+  # [span_4](start_span)导航路径修正 (从高德重定向回 Apple 国际版)[span_4](end_span)
+  ^https?:\/\/direction2\.is\.autonavi\.com\/direction:
+    url: https://gsp-ssl.ls.apple.com/directions.arpc
+    type: 302
+
+  # [span_5](start_span)其他特定子域名强制回归国际版[span_5](end_span)
+  ^https?:\/\/gspe11-2-cn-ssl\.ls\.apple\.com\/:
+    url: https://gspe11--ssl.ls.apple.com/
+    type: 302
+
+  # [span_6](start_span)修改 Geo Manifest 的国家代码 (从 CN 改为 US)[span_6](end_span)
+  # 这里使用正则捕获组来保留原有的版本号、硬件信息和识别码
+  ^https?:\/\/gspe35-ssl\.ls\.apple\.com\/geo_manifest\/dynamic\/config\?(.*)country_code=CN(.*):
+    url: https://gspe35-ssl.ls.apple.com/geo_manifest/dynamic/config?$1country_code=US$2
+    type: 302
